@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRoute } from '@react-navigation/native';
 import {
   View,
   TextInput,
@@ -12,16 +13,19 @@ import {
 import axios from 'axios';
 
 export default function SymptomCheckerScreen() {
+  const route = useRoute();
+  const { query } = route.params || {};
+
   const [messages, setMessages] = useState([
     { sender: 'bot', text: 'Hi! I’m MedAId 🤖. Describe your symptoms, and I’ll help you.' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const sendMessage = async () => {
-    if (input.trim() === '') return;
+  const sendMessage = async (textToSend = input) => {
+    if (textToSend.trim() === '') return;
 
-    const userMsg = { sender: 'user', text: input };
+    const userMsg = { sender: 'user', text: textToSend };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
@@ -33,15 +37,16 @@ export default function SymptomCheckerScreen() {
           model: 'llama3-8b-8192',
           messages: [
             { role: 'system', content: 'You are a medical AI assistant that answers health-related queries.' },
-            ...messages
-              .filter(m => m.sender !== 'bot') // only user messages
-              .map(m => ({ role: 'user', content: m.text })),
+            ...messages.map(m => ({
+              role: m.sender === 'user' ? 'user' : 'assistant',
+              content: m.text
+            })),
             { role: 'user', content: userMsg.text }
           ]
         },
         {
           headers: {
-            Authorization: 'Bearer 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', // replace this!
+            Authorization: 'Bearer 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',
             'Content-Type': 'application/json'
           }
         }
@@ -56,6 +61,13 @@ export default function SymptomCheckerScreen() {
       setLoading(false);
     }
   };
+
+  // Auto-trigger a response if `query` was passed from Home screen
+  useEffect(() => {
+    if (query) {
+      sendMessage(query);
+    }
+  }, [query]);
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -81,7 +93,7 @@ export default function SymptomCheckerScreen() {
           style={styles.input}
           multiline
         />
-        <Button title={loading ? '...' : 'Send'} onPress={sendMessage} disabled={loading} />
+        <Button title={loading ? '...' : 'Send'} onPress={() => sendMessage()} disabled={loading} />
       </View>
     </KeyboardAvoidingView>
   );
