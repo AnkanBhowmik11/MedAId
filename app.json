@@ -24,6 +24,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-health-connect"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1ddb0119-5fd7-4727-b95f-b37cc3eb4646"
+      }
     }
   }
 }
